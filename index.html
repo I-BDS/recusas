@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RECUSAS · Cloud Sync</title>
+
+<link rel="icon" type="image/png" href="https://img.icons8.com/ios-filled/100/ef4444/cancel.png">
+<link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/180/ef4444/cancel.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+  --bg: #f1f5f9;
+  --surf1: #ffffff;
+  --surf2: #f8fafc;
+  --surf3: #e2e8f0;
+  --border: #e2e8f0;
+  --border2: #cbd5e1;
+  --accent: #0f172a;
+  --sidebar-bg: #111827;
+  --sidebar-item: #94a3b8;
+  --sidebar-active: #ffffff;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue: #2563eb;
+  --yellow: #f59e0b;
+  --text: #1e293b;
+  --muted: #64748b;
+  --muted2: #94a3b8;
+  --sidebar-width: 240px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app { display: flex; height: 100vh; width: 100vw; position: relative; }
+
+#sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(2px);
+  z-index: 998;
+}
+
+#sidebar-overlay.active { display: block; }
+
+#sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 999;
+}
+
+#sidebar.collapsed { margin-left: calc(var(--sidebar-width) * -1); }
+
+.sidebar-logo {
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-logo .logo-icon {
+  width: 24px;
+  height: 24px;
+  background: var(--red);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.sidebar-logo .logo-label {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.sidebar-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(16,185,129,.4);
+  animation: pulse 2s infinite;
+}
+.status-dot.offline { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,.4); animation: none; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+
+.status-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--sidebar-item);
+  text-transform: uppercase;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sidebar-item);
+  transition: all .2s;
+}
+
+.nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.nav-item.active { color: #fff; background: var(--blue); }
+
+.sidebar-actions {
+  padding: 16px 12px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--sidebar-bg);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  transition: all .2s;
+}
+
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-cloud { background: transparent; color: #fff; border-color: rgba(255,255,255,0.1); }
+.btn-cloud:hover { background: rgba(255,255,255,0.05); }
+.btn-ghost { background: transparent; color: var(--sidebar-item); border-color: rgba(255,255,255,0.05); }
+.btn-ghost:hover { color: #fff; }
+.btn-outline { background: transparent; color: #fff; border-color: rgba(255,255,255,0.1); }
+.btn-danger { background: rgba(239,68,68,0.1); color: var(--red); border-color: rgba(239,68,68,0.2); }
+
+#main {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.topbar {
+  background: var(--accent);
+  min-height: 64px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu-toggle {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-title {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.topbar-title span { color: var(--blue); }
+
+.search-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  max-width: 500px;
+  position: relative;
+}
+
+.search-wrap input {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 10px 12px 10px 38px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.search-wrap input:focus {
+  background: rgba(255,255,255,0.12);
+  border-color: var(--blue);
+}
+
+.search-wrap .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.3);
+}
+
+.topbar-right {
+  margin-left: auto;
+}
+
+.topbar-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #fff;
+  background: rgba(255,255,255,0.05);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  white-space: nowrap;
+}
+
+.page { display: none; padding: 24px; animation: fadeUp .4s ease both; }
+.page.active { display: block; }
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--surf1);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.kpi-bg-icon {
+  position: absolute;
+  right: 12px; bottom: 8px;
+  font-size: 40px;
+  opacity: .05;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.panel {
+  background: var(--surf1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surf2);
+}
+
+.panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+.panel-body { padding: 20px; max-height: 400px; overflow-y: auto; }
+
+.ranking-list { display: flex; flex-direction: column; gap: 8px; }
+.rank-item { display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--surf2); border-radius: 8px; }
+.rank-pos { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; width: 24px; }
+.rank-bar-wrap { flex: 1; overflow: hidden; }
+.rank-name { font-size: 12px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-bar-bg { height: 4px; background: var(--surf3); border-radius: 2px; }
+.rank-bar-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.5s; }
+.rank-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; }
+
+.chart-wrap { height: 280px; position: relative; }
+
+.table-wrap { max-height: 500px; overflow-y: auto; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead { position: sticky; top: 0; z-index: 10; }
+th { text-align: left; padding: 12px 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); cursor: pointer; background: var(--surf2); }
+td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+
+.badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.badge-warning { background: #fef3c7; color: #b45309; border: 1px solid rgba(180, 83, 9, 0.1); }
+
+/* MODAL DESIGN */
+#modal-confirm {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#modal-confirm.active { display: flex; }
+.modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 380px;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalIn 0.3s ease-out;
+}
+@keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-header { text-align: center; margin-bottom: 16px; }
+.modal-icon { font-size: 32px; margin-bottom: 12px; }
+.modal-title { font-size: 16px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+.modal-body { text-align: center; color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 24px; }
+.modal-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+@media (max-width: 768px) {
+  .topbar { padding: 0 12px; height: 72px; gap: 10px; }
+  .topbar-title { font-size: 11px; white-space: normal; }
+  .topbar-title .break-m { display: block; }
+  .search-wrap { max-width: none; }
+  .search-wrap input { padding: 8px 10px 8px 32px; font-size: 12px; }
+  .topbar-time { font-size: 10px; padding: 4px 8px; }
+  #sidebar { position: fixed; height: 100%; transform: translateX(-100%); width: var(--sidebar-width); margin-left: 0 !important; }
+  #sidebar.open { transform: translateX(0); }
+  .content-grid { grid-template-columns: 1fr; }
+}
+
+.break-m { display: inline; }
+#loader { position: fixed; inset: 0; background: var(--accent); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; transition: opacity 0.5s; }
+#loader.hidden { opacity: 0; pointer-events: none; }
+.loader-logo { color: #fff; font-size: 24px; font-weight: 800; letter-spacing: 4px; }
+.loader-bar-track { width: 200px; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+.loader-bar-fill { height: 100%; background: var(--blue); width: 100%; animation: load 1s ease-in-out; }
+@keyframes load { from { width: 0%; } }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
+.form-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; }
+.form-input:focus { border-color: var(--blue); }
+label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; display: block; }
+
+#toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; }
+.toast { padding: 12px 20px; border-radius: 8px; background: #fff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-left: 4px solid var(--blue); font-size: 13px; font-weight: 500; animation: slideIn 0.3s ease; }
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="loader-logo">RECUSAS</div>
+  <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
+</div>
+
+<div id="modal-confirm" onclick="closeModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon" id="modalIcon">❓</div>
+      <div class="modal-title" id="modalTitle">Confirmação</div>
+    </div>
+    <div class="modal-body" id="modalBody">Deseja prosseguir com esta ação?</div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="resolveModal(false)" style="border: 1px solid var(--border)">Cancelar</button>
+      <button class="btn btn-primary" id="modalConfirmBtn" onclick="resolveModal(true)">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="csvInput" accept=".csv" style="display:none">
+
+<div id="app">
+  <div id="sidebar-overlay" onclick="toggleMenu()"></div>
+  
+  <aside id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">✕</div>
+      <div class="logo-label">RECUSAS</div>
+    </div>
+    <div class="sidebar-status">
+      <div class="status-dot" id="statusDot"></div>
+      <div class="status-text" id="statusText">Conectando...</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+        <span>📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-page="equipe" onclick="switchPage('equipe')">
+        <span>👥</span> Equipe
+      </div>
+    </nav>
+    <div class="sidebar-actions">
+      <button class="btn btn-primary" onclick="document.getElementById('csvInput').click()">⬆ Importar CSV</button>
+      <button class="btn btn-cloud" onclick="handleCloudSync()">☁ Subir para Nuvem</button>
+      <button class="btn btn-outline" onclick="handleExcelExport()">⬇ Exportar Excel</button>
+      <button class="btn btn-ghost" id="btnToggleCharts">◎ Mostrar Números</button>
+      <button class="btn btn-danger" onclick="handleClearCache()">✕ Limpar Cache</button>
+      <button class="btn btn-danger" onclick="handleClearCloud()">✕ Limpar Nuvem</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <div class="topbar-title">GESTÃO DE<span class="break-m"> </span><span>RECUSAS</span></div>
+      </div>
+      
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="filtroInput" placeholder="Buscar rua ou repositor...">
+      </div>
+      
+      <div class="topbar-right">
+        <div class="topbar-time" id="relogioTopbar">--:--</div>
+      </div>
+    </div>
+
+    <div id="page-dashboard" class="page active">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Recusas SKU</div>
+          <div class="kpi-value" id="kpiSkus">0</div>
+          <div class="kpi-bg-icon">⬡</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" style="color:var(--green)">Total Unidades</div>
+          <div class="kpi-value" id="kpiUnidades" style="color:var(--green)">0</div>
+          <div class="kpi-bg-icon">⊞</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" style="color:var(--blue)">Ruas Mapeadas</div>
+          <div class="kpi-value" id="kpiRuas" style="color:var(--blue)">0</div>
+          <div class="kpi-bg-icon">⊕</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" style="color:var(--yellow)">Equipe</div>
+          <div class="kpi-value" id="kpiEquipe" style="color:var(--yellow)">0</div>
+          <div class="kpi-bg-icon">◈</div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><div class="dot"></div> Ranking Colaboradores</div>
+          </div>
+          <div class="panel-body">
+            <div class="ranking-list" id="rankColaboradores"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><div class="dot" style="background:var(--blue)"></div> Ranking Ruas</div>
+          </div>
+          <div class="panel-body">
+            <div class="ranking-list" id="rankRuas"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Volume por Colaborador</div></div>
+          <div class="panel-body">
+            <div class="chart-wrap"><canvas id="graficoBarras"></canvas></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Distribuição Ruas</div></div>
+          <div class="panel-body">
+            <div class="chart-wrap"><canvas id="graficoPizza"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Detalhamento Geral</div>
+          <div id="tableCount" style="font-family:'JetBrains Mono'; font-size:10px; color:var(--muted)">0 registros</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th id="th-setor" onclick="sortTable('setor')">Setor / Rua</th>
+                <th id="th-skus" onclick="sortTable('skus')" style="text-align:center">Qtd. SKUs</th>
+                <th id="th-unidades" onclick="sortTable('unidades')" style="text-align:center">Unidades</th>
+                <th>Responsável</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaDados"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-equipe" class="page">
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-header"><div class="panel-title">Vincular Repositor</div></div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="form-group"><label>Rua</label><input type="number" id="cadRua" class="form-input"></div>
+            <div class="form-group"><label>P. Início</label><input type="number" id="cadPIni" class="form-input"></div>
+            <div class="form-group"><label>P. Fim</label><input type="number" id="cadPFim" class="form-input"></div>
+            <div class="form-group"><label>Nome</label><input type="text" id="cadNome" class="form-input"></div>
+            <button class="btn btn-primary" onclick="salvarVinculo()">Vincular</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Equipe Cadastrada (Supabase)</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Setor</th><th>Repositor</th><th style="text-align:right">Ação</th></tr></thead>
+            <tbody id="tabelaVinculos"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const SUPABASE_URL = 'https://dvazlodxcraaevioulch.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2YXpsb2R4Y3JhYWV2aW91bGNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzgwNDQsImV4cCI6MjA4NzQ1NDA0NH0.IDGQoTP7W3npaZH8EKFCxGDXE6s6CEz9nx2NEv4ankY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+
+Chart.register(ChartDataLabels);
+
+let setores = [], dadosBrutos = [], dadosAgrupados = [], dadosBancoConsolidados = []; 
+let sortState = { col: 'unidades', asc: false };
+let showLabels = false, chartBarra = null, chartPizza = null;
+let modalResolver = null;
+
+function openModal(icon, title, body, btnText, btnClass) {
+  document.getElementById('modalIcon').textContent = icon;
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').textContent = body;
+  const confirmBtn = document.getElementById('modalConfirmBtn');
+  confirmBtn.textContent = btnText;
+  confirmBtn.className = `btn ${btnClass}`;
+  document.getElementById('modal-confirm').classList.add('active');
+  return new Promise(resolve => { modalResolver = resolve; });
+}
+
+function resolveModal(result) {
+  document.getElementById('modal-confirm').classList.remove('active');
+  if (modalResolver) modalResolver(result);
+}
+
+function closeModal(e) { if(e.target.id === 'modal-confirm') resolveModal(false); }
+
+async function handleCloudSync() {
+  if (!dadosAgrupados.length) return toast('Sem dados para subir', 'error');
+  const confirm = await openModal('☁️', 'Sincronizar Nuvem', 'Esta ação irá substituir os dados atuais no servidor pelos dados locais. Deseja continuar?', 'Sincronizar', 'btn-primary');
+  if (confirm) sincronizarComBanco();
+}
+
+async function handleExcelExport() {
+  if (!dadosAgrupados.length) return toast('Sem dados para exportar', 'error');
+  const confirm = await openModal('📊', 'Exportar Excel', 'Deseja gerar e baixar o relatório completo em formato .xlsx?', 'Exportar', 'btn-primary');
+  if (confirm) exportarXLSX();
+}
+
+async function handleClearCache() {
+  const confirm = await openModal('🧹', 'Limpar Cache', 'Isso removerá os dados importados localmente e recarregará a página. Tem certeza?', 'Limpar', 'btn-danger');
+  if (confirm) { localStorage.removeItem('recusas_cache'); location.reload(); }
+}
+
+async function handleClearCloud() {
+  const confirm = await openModal('⚠️', 'Limpar Nuvem', 'ATENÇÃO: Isso apagará permanentemente todos os dados sincronizados no servidor. Esta ação não pode ser desfeita.', 'Apagar Tudo', 'btn-danger');
+  if (confirm) limparBancoNuvem();
+}
+
+function toggleMenu() {
+  const s = document.getElementById('sidebar'), o = document.getElementById('sidebar-overlay');
+  if (window.innerWidth <= 768) { s.classList.toggle('open'); o.classList.toggle('active'); }
+  else { s.classList.toggle('collapsed'); }
+}
+
+function toast(m, t='info') {
+  const e = document.createElement('div'); e.className = `toast ${t}`; e.textContent = m;
+  document.getElementById('toast-container').appendChild(e);
+  setTimeout(() => e.remove(), 3500);
+}
+
+function updateClock() {
+  const n = new Date(); document.getElementById('relogioTopbar').textContent = n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+setInterval(updateClock, 1000); updateClock();
+
+function switchPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${id}`).classList.add('active');
+  document.querySelector(`[data-page="${id}"]`).classList.add('active');
+  if(window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('open')) toggleMenu();
+}
+
+async function init() {
+  try {
+    await carregarSetores();
+    const local = localStorage.getItem('recusas_cache');
+    if (local) { dadosBrutos = JSON.parse(local); processarTudo(false); }
+    else await carregarRankingGeral();
+    setStatus(true);
+    sb.channel('realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'setores' }, carregarSetores).subscribe();
+  } catch (e) { setStatus(false); }
+  setTimeout(() => document.getElementById('loader').classList.add('hidden'), 1000);
+}
+
+function setStatus(o) {
+  const d = document.getElementById('statusDot'), t = document.getElementById('statusText');
+  d.className = o ? 'status-dot' : 'status-dot offline';
+  t.textContent = o ? 'Online' : 'Offline';
+}
+
+async function carregarSetores() {
+  const { data, error } = await sb.from('setores').select('*').order('rua');
+  if (error) return; setores = data || []; renderizarVinculos();
+  if (dadosBrutos.length) processarTudo(false);
+}
+
+async function carregarRankingGeral() {
+  const { data, error } = await sb.from('ranking_geral').select('*');
+  if (error || !data) return;
+  dadosBancoConsolidados = data.map(d => ({
+    setor: d.rua ? `Rua ${d.rua}` : 'Sem Endereço', repositor: d.repositor, skus: d.skus, unidades: d.unidades, ruaNum: d.rua
+  }));
+  if (!dadosBrutos.length) processarTudo(false);
+}
+
+async function sincronizarComBanco() {
+  toast('Sincronizando...', 'info');
+  await sb.from('ranking_geral').delete().neq('repositor', 'SYSTEM_RESERVED');
+  const payloads = dadosAgrupados.map(d => ({ repositor: d.repositor, skus: d.skus, unidades: d.unidades, rua: d.ruaNum || null }));
+  const { error } = await sb.from('ranking_geral').insert(payloads);
+  if (error) toast('Erro ao salvar', 'error');
+  else { toast('Sincronizado!', 'success'); await carregarRankingGeral(); }
+}
+
+function processarTudo(auto=false) {
+  const f = (document.getElementById('filtroInput')?.value || '').toLowerCase().trim();
+  if (dadosBrutos.length > 0) {
+    const mapa = {}; let sk=0, un=0;
+    dadosBrutos.forEach(d => {
+      let n=null, l='';
+      if (!d.rua) l='Sem Endereço';
+      else {
+        const v = setores.find(s => s.rua === d.rua && (d.predio ?? 0) >= s.p_ini && (d.predio ?? 0) <= s.p_fim);
+        if (v) { n=v.nome; l=`Rua ${d.rua} · P:${v.p_ini}-${v.p_fim}`; }
+        else l=`Rua ${d.rua} · P:${d.predio}`;
+      }
+      const rep = n || '⚠ Pendente';
+      if (f && !l.toLowerCase().includes(f) && !rep.toLowerCase().includes(f)) return;
+      if (!mapa[l]) mapa[l] = { setor: l, repositor: rep, skus: 0, unidades: 0, ruaNum: d.rua || 0 };
+      mapa[l].skus++; mapa[l].unidades += d.quantidade; sk++; un += d.quantidade;
+    });
+    dadosAgrupados = Object.values(mapa);
+    animateValue('kpiSkus', sk); animateValue('kpiUnidades', un, true);
+    animateValue('kpiRuas', new Set(dadosBrutos.filter(d=>d.rua).map(d=>d.rua)).size);
+  } else {
+    dadosAgrupados = dadosBancoConsolidados.filter(d => !f || d.setor.toLowerCase().includes(f) || d.repositor.toLowerCase().includes(f));
+    let sk=0, un=0; const rs=new Set();
+    dadosAgrupados.forEach(d=>{ sk+=d.skus; un+=d.unidades; if(d.ruaNum) rs.add(d.ruaNum); });
+    animateValue('kpiSkus', sk); animateValue('kpiUnidades', un, true); animateValue('kpiRuas', rs.size);
+  }
+  animateValue('kpiEquipe', new Set(setores.map(s=>s.nome)).size);
+  renderizarRankings(); ordenarERenderizar();
+}
+
+function animateValue(id, target, format=false) {
+  const el = document.getElementById(id); if(!el) return;
+  const start = parseInt(el.textContent.replace(/\D/g, '')) || 0;
+  const diff = target - start; if(diff === 0) { el.textContent = format ? target.toLocaleString() : target; return; }
+  let step = 0; const steps = 20;
+  const timer = setInterval(() => {
+    step++; const val = Math.round(start + (diff * (step/steps)));
+    el.textContent = format ? val.toLocaleString() : val;
+    if(step >= steps) clearInterval(timer);
+  }, 25);
+}
+
+function renderizarRankings() {
+  const rRep={}, rRua={};
+  dadosAgrupados.forEach(d => {
+    if(d.repositor !== '⚠ Pendente') rRep[d.repositor] = (rRep[d.repositor] || 0) + d.unidades;
+    if(d.ruaNum) rRua[`Rua ${d.ruaNum}`] = (rRua[`Rua ${d.ruaNum}`] || 0) + d.unidades;
+  });
+  renderRankList('rankColaboradores', Object.entries(rRep).sort((a,b)=>b[1]-a[1]), 'var(--accent)');
+  renderRankList('rankRuas', Object.entries(rRua).sort((a,b)=>b[1]-a[1]), 'var(--blue)');
+}
+
+function renderRankList(id, items, color) {
+  const el = document.getElementById(id); if(!items.length) { el.innerHTML = 'Sem dados'; return; }
+  const max = items[0][1];
+  el.innerHTML = items.map(([n, q], i) => `
+    <div class="rank-item">
+      <div class="rank-pos" style="color:${color}">#${i+1}</div>
+      <div class="rank-bar-wrap">
+        <div class="rank-name">${n}</div>
+        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(q/max*100)}%; background:${color}"></div></div>
+      </div>
+      <div class="rank-val">${q.toLocaleString()}</div>
+    </div>`).join('');
+}
+
+function sortTable(col) {
+  if(sortState.col === col) sortState.asc = !sortState.asc; else { sortState.col = col; sortState.asc = false; }
+  ordenarERenderizar();
+}
+
+function ordenarERenderizar() {
+  dadosAgrupados.sort((a,b) => sortState.asc ? (a[sortState.col] > b[sortState.col] ? 1 : -1) : (a[sortState.col] < b[sortState.col] ? 1 : -1));
+  document.getElementById('tableCount').textContent = `${dadosAgrupados.length} setores`;
+  document.getElementById('tabelaDados').innerHTML = dadosAgrupados.map(d => `
+    <tr>
+      <td style="font-family:'JetBrains Mono'; font-weight:600">${d.setor}</td>
+      <td style="text-align:center">${d.skus}</td>
+      <td style="text-align:center; font-weight:700; color:var(--green)">${d.unidades.toLocaleString()}</td>
+      <td>${d.repositor === '⚠ Pendente' ? '<span class="badge badge-warning">⚠ Pendente</span>' : d.repositor}</td>
+    </tr>`).join('');
+  atualizarCharts();
+}
+
+function atualizarCharts() {
+  const res={}; dadosAgrupados.forEach(d=>{ if(!res[d.repositor]) res[d.repositor]=0; res[d.repositor]+=d.unidades; });
+  const keys = Object.keys(res).slice(0, 10);
+  if(chartBarra) chartBarra.destroy();
+  chartBarra = new Chart(document.getElementById('graficoBarras'), {
+    type: 'bar',
+    data: { labels: keys, datasets: [{ label: 'Unidades', data: keys.map(k=>res[k]), backgroundColor: '#2563eb' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: showLabels, color: '#fff', font: { weight: 'bold' }, formatter: Math.round } } }
+  });
+
+  const rRes={}; dadosAgrupados.forEach(d=>{ const l=d.ruaNum?`Rua ${d.ruaNum}`:'Sem End.'; rRes[l]=(rRes[l]||0)+d.unidades; });
+  const rK = Object.keys(rRes).sort((a,b)=>rRes[b]-rRes[a]).slice(0, 10);
+  if(chartPizza) chartPizza.destroy();
+  chartPizza = new Chart(document.getElementById('graficoPizza'), {
+    type: 'doughnut',
+    data: { labels: rK, datasets: [{ data: rK.map(k=>rRes[k]), backgroundColor: ['#0f172a','#2563eb','#10b981','#f59e0b','#ef4444'] }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: showLabels, position: 'bottom' }, datalabels: { display: showLabels, color: '#fff' } } }
+  });
+}
+
+document.getElementById('btnToggleCharts').onclick = function() {
+  showLabels = !showLabels; this.textContent = showLabels ? '◎ Ocultar Números' : '◎ Mostrar Números'; atualizarCharts();
+};
+
+async function salvarVinculo() {
+  const rua = parseInt(document.getElementById('cadRua').value), pIni = parseInt(document.getElementById('cadPIni').value)||0, pFim = parseInt(document.getElementById('cadPFim').value)||999, nome = document.getElementById('cadNome').value.trim();
+  if(!rua || !nome) return;
+  await sb.from('setores').insert([{ rua, p_ini: pIni, p_fim: pFim, nome }]);
+  toast('Salvo!', 'success');
+}
+
+async function removerVinculo(id) {
+  const confirm = await openModal('🗑️', 'Remover Vínculo', 'Deseja remover este repositor desta rua?', 'Remover', 'btn-danger');
+  if(confirm) { await sb.from('setores').delete().eq('id', id); toast('Removido!'); }
+}
+
+function renderizarVinculos() {
+  document.getElementById('tabelaVinculos').innerHTML = setores.map(s => `<tr><td style="font-family:'JetBrains Mono'">Rua ${s.rua} [${s.p_ini}-${s.p_fim}]</td><td>${s.nome}</td><td style="text-align:right"><button onclick="removerVinculo('${s.id}')" style="color:var(--red); border:none; background:none; cursor:pointer; font-size:10px; font-weight:700">REMOVER</button></td></tr>`).join('');
+}
+
+async function limparBancoNuvem() {
+  await sb.from('ranking_geral').delete().neq('repositor', 'SYSTEM_RESERVED');
+  toast('Nuvem limpa!', 'success'); dadosBancoConsolidados = []; processarTudo();
+}
+
+function exportarXLSX() {
+  const ws = XLSX.utils.json_to_sheet(dadosAgrupados);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Recusas");
+  XLSX.writeFile(wb, "Relatorio_Recusas.xlsx");
+}
+
+document.getElementById('csvInput').onchange = (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = (ev) => {
+    const lines = ev.target.result.split(/\r?\n/).filter(l => l.trim()!=='');
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const novos = lines.slice(1).map(l => {
+      const c = l.split(sep); const rM = (c[3]||'').match(/R[:\s.]+(\d+)/i), pM = (c[3]||'').match(/P[:\s.]+(\d+)/i);
+      return { quantidade: parseInt(c[1])||0, rua: rM?parseInt(rM[1]):0, predio: pM?parseInt(pM[1]):0 };
+    });
+    localStorage.setItem('recusas_cache', JSON.stringify(novos));
+    dadosBrutos = novos; processarTudo(); toast('Importado!', 'success');
+  };
+  r.readAsText(f);
+};
+
+document.getElementById('filtroInput').oninput = () => processarTudo();
+init();
+</script>
+</body>
+</html>
