@@ -2,14 +2,18 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>RECUSAS</title>
 
 <link rel="icon" type="image/png" href="https://img.icons8.com/ios-filled/100/ef4444/cancel.png">
 <link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/180/ef4444/cancel.png">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RECUSAS">
 <meta name="theme-color" content="#0f172a">
+
+<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlJFQ1VTQVMiLAogICJzaG9ydF9uYW1lIjogIlJFQ1VTQVMiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBmMTcyYSIsCiAgInRoZW1lX2NvbG9yIjogIzBmMTcyYSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vaW1nLmljb25zOC5jb20vaW9zLWZpbGxlZC81MTIvZWY0NDQ0L2NhbmNlbC5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIsCiAgICAgICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSIKICAgIH1cbiAgXQp9">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -38,9 +42,16 @@
   --muted: #64748b;
   --muted2: #94a3b8;
   --sidebar-width: 240px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  -webkit-tap-highlight-color: transparent;
+}
 
 body {
   background: var(--bg);
@@ -48,9 +59,17 @@ body {
   font-family: 'Inter', sans-serif;
   height: 100vh;
   overflow: hidden;
+  position: fixed;
+  width: 100%;
 }
 
-#app { display: flex; height: 100vh; width: 100vw; position: relative; }
+#app { 
+  display: flex; 
+  height: 100vh; 
+  width: 100vw; 
+  position: relative; 
+  padding-bottom: var(--safe-bottom);
+}
 
 #sidebar-overlay {
   display: none;
@@ -71,6 +90,7 @@ body {
   flex-direction: column;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 999;
+  padding-top: var(--safe-top);
 }
 
 #sidebar.collapsed { margin-left: calc(var(--sidebar-width) * -1); }
@@ -138,13 +158,14 @@ body {
   flex-direction: column;
   gap: 4px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 12px; 
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
@@ -170,7 +191,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px;
+  padding: 12px; 
   border-radius: 6px;
   border: 1px solid transparent;
   cursor: pointer;
@@ -194,15 +215,16 @@ body {
   display: flex;
   flex-direction: column;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .topbar {
   background: var(--accent);
-  min-height: 64px;
-  padding: 0 20px;
+  min-height: calc(64px + var(--safe-top));
+  padding: var(--safe-top) 20px 0 20px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -212,7 +234,7 @@ body {
 .topbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .menu-toggle {
@@ -224,6 +246,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 40px;
+  height: 40px;
 }
 
 .topbar-title {
@@ -242,7 +266,7 @@ body {
   flex: 1;
   display: flex;
   justify-content: center;
-  max-width: 500px;
+  max-width: 400px;
   position: relative;
 }
 
@@ -256,6 +280,7 @@ body {
   font-size: 13px;
   outline: none;
   transition: all 0.2s;
+  -webkit-appearance: none;
 }
 
 .search-wrap input:focus {
@@ -272,7 +297,30 @@ body {
 }
 
 .topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
+}
+
+.btn-toggle-metric {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-toggle-metric.active {
+  background: var(--blue);
+  border-color: var(--blue);
 }
 
 .topbar-time {
@@ -367,7 +415,7 @@ body {
 
 .panel-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 
-.panel-body { padding: 20px; max-height: 400px; overflow-y: auto; }
+.panel-body { padding: 20px; max-height: 400px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 .ranking-list { display: flex; flex-direction: column; gap: 8px; }
 .rank-item { display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--surf2); border-radius: 8px; }
@@ -380,7 +428,7 @@ body {
 
 .chart-wrap { height: 280px; position: relative; }
 
-.table-wrap { max-height: 500px; overflow-y: auto; overflow-x: auto; }
+.table-wrap { max-height: 500px; overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; }
 thead { position: sticky; top: 0; z-index: 10; }
 th { text-align: left; padding: 12px 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); cursor: pointer; background: var(--surf2); }
@@ -389,7 +437,6 @@ td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border)
 .badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
 .badge-warning { background: #fef3c7; color: #b45309; border: 1px solid rgba(180, 83, 9, 0.1); }
 
-/* MODAL DESIGN */
 #modal-confirm {
   display: none;
   position: fixed;
@@ -419,15 +466,17 @@ td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border)
 .modal-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 @media (max-width: 768px) {
-  .topbar { padding: 0 12px; height: 72px; gap: 10px; }
+  .topbar { padding: var(--safe-top) 12px 0 12px; height: 72px; gap: 8px; }
   .topbar-title { font-size: 11px; white-space: normal; }
   .topbar-title .break-m { display: block; }
   .search-wrap { max-width: none; }
   .search-wrap input { padding: 8px 10px 8px 32px; font-size: 12px; }
-  .topbar-time { font-size: 10px; padding: 4px 8px; }
+  .topbar-right { gap: 4px; }
+  .topbar-time { display: none; }
   #sidebar { position: fixed; height: 100%; transform: translateX(-100%); width: var(--sidebar-width); margin-left: 0 !important; }
   #sidebar.open { transform: translateX(0); }
   .content-grid { grid-template-columns: 1fr; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
 }
 
 .break-m { display: inline; }
@@ -441,11 +490,11 @@ td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border)
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
-.form-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; }
+.form-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; outline: none; -webkit-appearance: none; }
 .form-input:focus { border-color: var(--blue); }
 label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; display: block; }
 
-#toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; }
+#toast-container { position: fixed; bottom: calc(20px + var(--safe-bottom)); right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; }
 .toast { padding: 12px 20px; border-radius: 8px; background: #fff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-left: 4px solid var(--blue); font-size: 13px; font-weight: 500; animation: slideIn 0.3s ease; }
 @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 </style>
@@ -476,7 +525,7 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
 <div id="app">
   <div id="sidebar-overlay" onclick="toggleMenu()"></div>
   
-  <aside id="sidebar">
+  <aside id="sidebar" class="collapsed">
     <div class="sidebar-logo">
       <div class="logo-icon">✕</div>
       <div class="logo-label">RECUSAS</div>
@@ -516,6 +565,8 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
       </div>
       
       <div class="topbar-right">
+        <button class="btn-toggle-metric active" id="btnModeUnidades" onclick="setMetricMode('unidades')">UNIDADES</button>
+        <button class="btn-toggle-metric" id="btnModeSkus" onclick="setMetricMode('skus')">SKUs</button>
         <div class="topbar-time" id="relogioTopbar">--:--</div>
       </div>
     </div>
@@ -547,7 +598,7 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
       <div class="content-grid">
         <div class="panel">
           <div class="panel-header">
-            <div class="panel-title"><div class="dot"></div> Ranking Colaboradores</div>
+            <div class="panel-title"><div class="dot"></div> Ranking Colaboradores (<span id="rankRepLabel">Unidades</span>)</div>
           </div>
           <div class="panel-body">
             <div class="ranking-list" id="rankColaboradores"></div>
@@ -555,7 +606,7 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
         </div>
         <div class="panel">
           <div class="panel-header">
-            <div class="panel-title"><div class="dot" style="background:var(--blue)"></div> Ranking Ruas</div>
+            <div class="panel-title"><div class="dot" style="background:var(--blue)"></div> Ranking Ruas (<span id="rankRuaLabel">Unidades</span>)</div>
           </div>
           <div class="panel-body">
             <div class="ranking-list" id="rankRuas"></div>
@@ -638,6 +689,16 @@ let setores = [], dadosBrutos = [], dadosAgrupados = [], dadosBancoConsolidados 
 let sortState = { col: 'unidades', asc: false };
 let showLabels = false, chartBarra = null, chartPizza = null;
 let modalResolver = null;
+let currentMetric = 'unidades';
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swCode = `self.addEventListener('fetch', function(e) { });`;
+    const blob = new Blob([swCode], {type: 'text/javascript'});
+    const url = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(url).catch(err => console.log('SW falhou', err));
+  });
+}
 
 function openModal(icon, title, body, btnText, btnClass) {
   document.getElementById('modalIcon').textContent = icon;
@@ -702,6 +763,16 @@ function switchPage(id) {
   document.getElementById(`page-${id}`).classList.add('active');
   document.querySelector(`[data-page="${id}"]`).classList.add('active');
   if(window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('open')) toggleMenu();
+}
+
+function setMetricMode(mode) {
+  currentMetric = mode;
+  document.getElementById('btnModeUnidades').classList.toggle('active', mode === 'unidades');
+  document.getElementById('btnModeSkus').classList.toggle('active', mode === 'skus');
+  const label = mode === 'unidades' ? 'Unidades' : 'SKUs';
+  document.getElementById('rankRepLabel').textContent = label;
+  document.getElementById('rankRuaLabel').textContent = label;
+  processarTudo();
 }
 
 async function init() {
@@ -791,8 +862,9 @@ function animateValue(id, target, format=false) {
 function renderizarRankings() {
   const rRep={}, rRua={};
   dadosAgrupados.forEach(d => {
-    if(d.repositor !== '⚠ Pendente') rRep[d.repositor] = (rRep[d.repositor] || 0) + d.unidades;
-    if(d.ruaNum) rRua[`Rua ${d.ruaNum}`] = (rRua[`Rua ${d.ruaNum}`] || 0) + d.unidades;
+    const val = d[currentMetric];
+    if(d.repositor !== '⚠ Pendente') rRep[d.repositor] = (rRep[d.repositor] || 0) + val;
+    if(d.ruaNum) rRua[`Rua ${d.ruaNum}`] = (rRua[`Rua ${d.ruaNum}`] || 0) + val;
   });
   renderRankList('rankColaboradores', Object.entries(rRep).sort((a,b)=>b[1]-a[1]), 'var(--accent)');
   renderRankList('rankRuas', Object.entries(rRua).sort((a,b)=>b[1]-a[1]), 'var(--blue)');
@@ -831,16 +903,16 @@ function ordenarERenderizar() {
 }
 
 function atualizarCharts() {
-  const res={}; dadosAgrupados.forEach(d=>{ if(!res[d.repositor]) res[d.repositor]=0; res[d.repositor]+=d.unidades; });
-  const keys = Object.keys(res).slice(0, 10);
+  const res={}; dadosAgrupados.forEach(d=>{ if(!res[d.repositor]) res[d.repositor]=0; res[d.repositor]+=d[currentMetric]; });
+  const keys = Object.keys(res).sort((a,b)=>res[b]-res[a]).slice(0, 10);
   if(chartBarra) chartBarra.destroy();
   chartBarra = new Chart(document.getElementById('graficoBarras'), {
     type: 'bar',
-    data: { labels: keys, datasets: [{ label: 'Unidades', data: keys.map(k=>res[k]), backgroundColor: '#2563eb' }] },
+    data: { labels: keys, datasets: [{ label: currentMetric.toUpperCase(), data: keys.map(k=>res[k]), backgroundColor: '#2563eb' }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: showLabels, color: '#fff', font: { weight: 'bold' }, formatter: Math.round } } }
   });
 
-  const rRes={}; dadosAgrupados.forEach(d=>{ const l=d.ruaNum?`Rua ${d.ruaNum}`:'Sem End.'; rRes[l]=(rRes[l]||0)+d.unidades; });
+  const rRes={}; dadosAgrupados.forEach(d=>{ const l=d.ruaNum?`Rua ${d.ruaNum}`:'Sem End.'; rRes[l]=(rRes[l]||0)+d[currentMetric]; });
   const rK = Object.keys(rRes).sort((a,b)=>rRes[b]-rRes[a]).slice(0, 10);
   if(chartPizza) chartPizza.destroy();
   chartPizza = new Chart(document.getElementById('graficoPizza'), {
