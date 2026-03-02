@@ -502,7 +502,7 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
 <div id="app">
   <div id="sidebar-overlay" onclick="toggleMenu()"></div>
   
-  <aside id="sidebar">
+  <aside id="sidebar" class="collapsed">
     <div class="sidebar-logo">
       <div class="logo-icon">✕</div>
       <div class="logo-label">RECUSAS</div>
@@ -574,9 +574,9 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
         <div class="panel">
           <div class="panel-header">
             <div class="panel-title"><div class="dot"></div> Ranking Colaboradores</div>
-            <div class="toggle-group">
-                <button class="toggle-btn active" data-metric="skus" onclick="changeMetric('skus')">SKU</button>
-                <button class="toggle-btn" data-metric="unidades" onclick="changeMetric('unidades')">UNID</button>
+            <div class="toggle-group" id="toggleColab">
+                <button class="toggle-btn active" data-metric="skus" onclick="changeMetric('colab', 'skus')">SKU</button>
+                <button class="toggle-btn" data-metric="unidades" onclick="changeMetric('colab', 'unidades')">UNID</button>
             </div>
           </div>
           <div class="panel-body">
@@ -586,9 +586,9 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
         <div class="panel">
           <div class="panel-header">
             <div class="panel-title"><div class="dot" style="background:var(--blue)"></div> Ranking Ruas</div>
-            <div class="toggle-group">
-                <button class="toggle-btn active" data-metric="skus" onclick="changeMetric('skus')">SKU</button>
-                <button class="toggle-btn" data-metric="unidades" onclick="changeMetric('unidades')">UNID</button>
+            <div class="toggle-group" id="toggleRuas">
+                <button class="toggle-btn active" data-metric="skus" onclick="changeMetric('ruas', 'skus')">SKU</button>
+                <button class="toggle-btn" data-metric="unidades" onclick="changeMetric('ruas', 'unidades')">UNID</button>
             </div>
           </div>
           <div class="panel-body">
@@ -672,13 +672,16 @@ let setores = [], dadosBrutos = [], dadosAgrupados = [], dadosBancoConsolidados 
 let sortState = { col: 'unidades', asc: false };
 let showLabels = false, chartBarra = null, chartPizza = null;
 let modalResolver = null;
-let currentMetric = 'skus';
+let metricColab = 'skus', metricRuas = 'skus';
 
-function changeMetric(m) {
-  currentMetric = m;
-  document.querySelectorAll('.toggle-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.metric === m);
-  });
+function changeMetric(target, m) {
+  if (target === 'colab') {
+    metricColab = m;
+    document.querySelectorAll('#toggleColab .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.metric === m));
+  } else {
+    metricRuas = m;
+    document.querySelectorAll('#toggleRuas .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.metric === m));
+  }
   renderizarRankings();
   atualizarCharts();
 }
@@ -835,23 +838,24 @@ function animateValue(id, target, format=false) {
 function renderizarRankings() {
   const rRep={}, rRua={};
   dadosAgrupados.forEach(d => {
-    const val = currentMetric === 'skus' ? d.skus : d.unidades;
-    if(d.repositor !== '⚠ Pendente') rRep[d.repositor] = (rRep[d.repositor] || 0) + val;
-    if(d.ruaNum) rRua[`Rua ${d.ruaNum}`] = (rRua[`Rua ${d.ruaNum}`] || 0) + val;
+    const valColab = metricColab === 'skus' ? d.skus : d.unidades;
+    const valRuas = metricRuas === 'skus' ? d.skus : d.unidades;
+    if(d.repositor !== '⚠ Pendente') rRep[d.repositor] = (rRep[d.repositor] || 0) + valColab;
+    if(d.ruaNum) rRua[`Rua ${d.ruaNum}`] = (rRua[`Rua ${d.ruaNum}`] || 0) + valRuas;
   });
-  renderRankList('rankColaboradores', Object.entries(rRep).sort((a,b)=>b[1]-a[1]), 'var(--accent)');
+  renderRankList('rankColaboradores', Object.entries(rRep).sort((a,b)=>a[1]-b[1]), 'var(--accent)');
   renderRankList('rankRuas', Object.entries(rRua).sort((a,b)=>b[1]-a[1]), 'var(--blue)');
 }
 
 function renderRankList(id, items, color) {
   const el = document.getElementById(id); if(!items.length) { el.innerHTML = 'Sem dados'; return; }
-  const max = items[0][1];
+  const maxVal = Math.max(...items.map(i => i[1]));
   el.innerHTML = items.map(([n, q], i) => `
     <div class="rank-item">
       <div class="rank-pos" style="color:${color}">#${i+1}</div>
       <div class="rank-bar-wrap">
         <div class="rank-name">${n}</div>
-        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(q/max*100)}%; background:${color}"></div></div>
+        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(q/maxVal*100)}%; background:${color}"></div></div>
       </div>
       <div class="rank-val">${q.toLocaleString()}</div>
     </div>`).join('');
@@ -877,7 +881,7 @@ function ordenarERenderizar() {
 
 function atualizarCharts() {
   const res={}; dadosAgrupados.forEach(d=>{ 
-    const val = currentMetric === 'skus' ? d.skus : d.unidades;
+    const val = metricColab === 'skus' ? d.skus : d.unidades;
     if(!res[d.repositor]) res[d.repositor]=0; 
     res[d.repositor]+=val; 
   });
@@ -885,12 +889,12 @@ function atualizarCharts() {
   if(chartBarra) chartBarra.destroy();
   chartBarra = new Chart(document.getElementById('graficoBarras'), {
     type: 'bar',
-    data: { labels: keys, datasets: [{ label: currentMetric.toUpperCase(), data: keys.map(k=>res[k]), backgroundColor: '#2563eb' }] },
+    data: { labels: keys, datasets: [{ label: metricColab.toUpperCase(), data: keys.map(k=>res[k]), backgroundColor: '#2563eb' }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: showLabels, color: '#fff', font: { weight: 'bold' }, formatter: Math.round } } }
   });
 
   const rRes={}; dadosAgrupados.forEach(d=>{ 
-    const val = currentMetric === 'skus' ? d.skus : d.unidades;
+    const val = metricRuas === 'skus' ? d.skus : d.unidades;
     const l=d.ruaNum?`Rua ${d.ruaNum}`:'Sem End.'; 
     rRes[l]=(rRes[l]||0)+val; 
   });
