@@ -521,7 +521,7 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
     </nav>
     <div class="sidebar-actions">
       <button class="btn btn-primary" onclick="document.getElementById('csvInput').click()">⬆ Importar CSV</button>
-      <button class="btn btn-cloud" onclick="handleCloudSync()">☁ Subir para Nuvem</button>
+      <button class="btn btn-cloud" onclick="handleCloudSync()">☁ Gravar</button>
       <button class="btn btn-outline" onclick="handleExcelExport()">⬇ Exportar Excel</button>
       <button class="btn btn-ghost" id="btnToggleCharts">◎ Mostrar Números</button>
       <button class="btn btn-danger" onclick="handleClearCache()">✕ Limpar Cache</button>
@@ -637,12 +637,12 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
       <div class="panel" style="margin-bottom:16px">
         <div class="panel-header"><div class="panel-title">Vincular Repositor</div></div>
         <div class="panel-body">
-          <div class="form-grid">
+          <div class="form-grid" id="vinculoForm">
             <div class="form-group"><label>Rua</label><input type="number" id="cadRua" class="form-input"></div>
             <div class="form-group"><label>P. Início</label><input type="number" id="cadPIni" class="form-input"></div>
             <div class="form-group"><label>P. Fim</label><input type="number" id="cadPFim" class="form-input"></div>
             <div class="form-group"><label>Nome</label><input type="text" id="cadNome" class="form-input"></div>
-            <button class="btn btn-primary" onclick="salvarVinculo()">Vincular</button>
+            <button class="btn btn-primary" id="btnSalvarVinculo" onclick="salvarVinculo()">Vincular</button>
           </div>
         </div>
       </div>
@@ -650,7 +650,7 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
         <div class="panel-header"><div class="panel-title">Equipe Cadastrada (Supabase)</div></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Setor</th><th>Repositor</th><th style="text-align:right">Ação</th></tr></thead>
+            <thead><tr><th>Setor</th><th>Repositor</th><th style="text-align:right">Ações</th></tr></thead>
             <tbody id="tabelaVinculos"></tbody>
           </table>
         </div>
@@ -673,6 +673,7 @@ let sortState = { col: 'unidades', asc: false };
 let showLabels = false, chartBarra = null, chartPizza = null;
 let modalResolver = null;
 let metricColab = 'skus', metricRuas = 'skus';
+let editingId = null;
 
 function changeMetric(target, m) {
   if (target === 'colab') {
@@ -914,8 +915,51 @@ document.getElementById('btnToggleCharts').onclick = function() {
 async function salvarVinculo() {
   const rua = parseInt(document.getElementById('cadRua').value), pIni = parseInt(document.getElementById('cadPIni').value)||0, pFim = parseInt(document.getElementById('cadPFim').value)||999, nome = document.getElementById('cadNome').value.trim();
   if(!rua || !nome) return;
-  await sb.from('setores').insert([{ rua, p_ini: pIni, p_fim: pFim, nome }]);
-  toast('Salvo!', 'success');
+  
+  if (editingId) {
+    const { error } = await sb.from('setores').update({ rua, p_ini: pIni, p_fim: pFim, nome }).eq('id', editingId);
+    if (!error) { toast('Atualizado!', 'success'); cancelarEdicao(); }
+    else { toast('Erro ao atualizar', 'error'); }
+  } else {
+    await sb.from('setores').insert([{ rua, p_ini: pIni, p_fim: pFim, nome }]);
+    toast('Salvo!', 'success');
+    document.getElementById('cadRua').value = '';
+    document.getElementById('cadPIni').value = '';
+    document.getElementById('cadPFim').value = '';
+    document.getElementById('cadNome').value = '';
+  }
+}
+
+function prepararEdicao(id) {
+  const s = setores.find(x => x.id === id);
+  if (!s) return;
+  editingId = id;
+  document.getElementById('cadRua').value = s.rua;
+  document.getElementById('cadPIni').value = s.p_ini;
+  document.getElementById('cadPFim').value = s.p_fim;
+  document.getElementById('cadNome').value = s.nome;
+  const btn = document.getElementById('btnSalvarVinculo');
+  btn.textContent = 'Salvar Alterações';
+  if (!document.getElementById('btnCancelarEdicao')) {
+    const cancelBtn = document.createElement('button');
+    cancelBtn.id = 'btnCancelarEdicao';
+    cancelBtn.className = 'btn btn-ghost';
+    cancelBtn.textContent = 'Cancelar';
+    cancelBtn.onclick = cancelarEdicao;
+    btn.parentNode.appendChild(cancelBtn);
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelarEdicao() {
+  editingId = null;
+  document.getElementById('cadRua').value = '';
+  document.getElementById('cadPIni').value = '';
+  document.getElementById('cadPFim').value = '';
+  document.getElementById('cadNome').value = '';
+  document.getElementById('btnSalvarVinculo').textContent = 'Vincular';
+  const c = document.getElementById('btnCancelarEdicao');
+  if (c) c.remove();
 }
 
 async function removerVinculo(id) {
@@ -924,7 +968,17 @@ async function removerVinculo(id) {
 }
 
 function renderizarVinculos() {
-  document.getElementById('tabelaVinculos').innerHTML = setores.map(s => `<tr><td style="font-family:'JetBrains Mono'">Rua ${s.rua} [${s.p_ini}-${s.p_fim}]</td><td>${s.nome}</td><td style="text-align:right"><button onclick="removerVinculo('${s.id}')" style="color:var(--red); border:none; background:none; cursor:pointer; font-size:10px; font-weight:700">REMOVER</button></td></tr>`).join('');
+  document.getElementById('tabelaVinculos').innerHTML = setores.map(s => `
+    <tr>
+      <td style="font-family:'JetBrains Mono'">Rua ${s.rua} [${s.p_ini}-${s.p_fim}]</td>
+      <td>${s.nome}</td>
+      <td style="text-align:right">
+        <div style="display:flex; gap:12px; justify-content:flex-end">
+          <button onclick="prepararEdicao('${s.id}')" style="color:var(--blue); border:none; background:none; cursor:pointer; font-size:10px; font-weight:700">EDITAR</button>
+          <button onclick="removerVinculo('${s.id}')" style="color:var(--red); border:none; background:none; cursor:pointer; font-size:10px; font-weight:700">REMOVER</button>
+        </div>
+      </td>
+    </tr>`).join('');
 }
 
 async function limparBancoNuvem() {
