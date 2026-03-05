@@ -416,33 +416,91 @@ td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border)
 .badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
 .badge-warning { background: #fef3c7; color: #b45309; border: 1px solid rgba(180, 83, 9, 0.1); }
 
-#modal-confirm {
+.modal-overlay {
   display: none;
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(10px);
   align-items: center;
   justify-content: center;
   padding: 20px;
 }
-#modal-confirm.active { display: flex; }
+.modal-overlay.active { display: flex; }
+#modal-confirm { z-index: 2000; }
+#modal-cancel-edit { z-index: 2001; }
+
 .modal-content {
   background: #fff;
   width: 100%;
   max-width: 380px;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: modalIn 0.3s ease-out;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.35);
+  animation: modalIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-@keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-.modal-header { text-align: center; margin-bottom: 16px; }
-.modal-icon { font-size: 32px; margin-bottom: 12px; }
-.modal-title { font-size: 16px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
-.modal-body { text-align: center; color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 24px; }
-.modal-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-content-wide { max-width: 560px; }
+@keyframes modalIn { from { transform: scale(0.88) translateY(16px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+
+.modal-stripe {
+  height: 5px;
+  background: linear-gradient(90deg, var(--blue), #818cf8);
+}
+.modal-stripe-warn { background: linear-gradient(90deg, var(--yellow), #fb923c); }
+.modal-stripe-danger { background: linear-gradient(90deg, var(--red), #f97316); }
+.modal-stripe-cancel { background: linear-gradient(90deg, #64748b, #94a3b8); }
+.modal-stripe-download { background: linear-gradient(90deg, var(--green), #0ea5e9); }
+
+.modal-inner { padding: 28px 28px 24px; }
+.modal-header { text-align: center; margin-bottom: 14px; }
+.modal-icon { font-size: 38px; margin-bottom: 10px; line-height: 1; }
+.modal-title { font-size: 15px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.8px; }
+.modal-body { text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 24px; }
+.modal-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modal-footer-single { grid-template-columns: 1fr; }
+
+/* Edit cancel modal banner */
+.edit-cancel-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  padding: 24px 28px 20px;
+  text-align: center;
+}
+.edit-cancel-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 12px;
+}
+.edit-cancel-name {
+  font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 4px;
+}
+.edit-cancel-sub {
+  font-size: 11px; color: rgba(255,255,255,0.45);
+  font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 1px;
+}
+
+/* Download modal */
+.download-stat-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0;
+}
+.download-stat {
+  background: var(--surf2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; text-align: center;
+}
+.download-stat-val { font-size: 22px; font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+.download-stat-label { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
+
+/* Vinculos table action buttons */
+.tbl-action-btn {
+  border: none; background: none; cursor: pointer;
+  font-size: 10px; font-weight: 700; padding: 4px 8px;
+  border-radius: 4px; transition: background .15s;
+}
+.tbl-action-btn:hover { background: var(--surf3); }
 
 @media (max-width: 768px) {
   .topbar { padding: 0 12px; height: 72px; gap: 10px; }
@@ -483,16 +541,71 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
   <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
 </div>
 
-<div id="modal-confirm" onclick="closeModal(event)">
+<div id="modal-confirm" class="modal-overlay" onclick="closeModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <div class="modal-icon" id="modalIcon">❓</div>
-      <div class="modal-title" id="modalTitle">Confirmação</div>
+    <div class="modal-stripe" id="modalStripe"></div>
+    <div class="modal-inner">
+      <div class="modal-header">
+        <div class="modal-icon" id="modalIcon">❓</div>
+        <div class="modal-title" id="modalTitle">Confirmação</div>
+      </div>
+      <div class="modal-body" id="modalBody">Deseja prosseguir com esta ação?</div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="resolveModal(false)" style="border:1px solid var(--border); border-radius:10px; padding:12px">Cancelar</button>
+        <button class="btn btn-primary" id="modalConfirmBtn" onclick="resolveModal(true)" style="border-radius:10px; padding:12px">Confirmar</button>
+      </div>
     </div>
-    <div class="modal-body" id="modalBody">Deseja prosseguir com esta ação?</div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="resolveModal(false)" style="border: 1px solid var(--border)">Cancelar</button>
-      <button class="btn btn-primary" id="modalConfirmBtn" onclick="resolveModal(true)">Confirmar</button>
+  </div>
+</div>
+
+<!-- Modal: Cancelar Edição -->
+<div id="modal-cancel-edit" class="modal-overlay" onclick="if(event.target===this)fecharModalCancelar()">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="edit-cancel-banner">
+      <div class="edit-cancel-avatar">✏️</div>
+      <div class="edit-cancel-name" id="cancelEditNome">Repositor</div>
+      <div class="edit-cancel-sub">Editando vínculo</div>
+    </div>
+    <div class="modal-inner" style="padding-top:20px">
+      <div class="modal-body" style="margin-bottom:20px">
+        Tem certeza que deseja <strong>descartar</strong> as alterações feitas neste vínculo?<br>
+        <span style="font-size:12px; color:var(--muted2)">As mudanças não salvas serão perdidas.</span>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="fecharModalCancelar()" style="background:var(--surf2); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:12px; font-size:11px">
+          ← Continuar Editando
+        </button>
+        <button class="btn btn-danger" onclick="confirmarCancelarEdicao()" style="border-radius:10px; padding:12px; font-size:11px">
+          Descartar Alterações
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Download Repositor -->
+<div id="modal-download-rep" class="modal-overlay" onclick="if(event.target===this)fecharModalDownload()">
+  <div class="modal-content modal-content-wide" onclick="event.stopPropagation()">
+    <div class="modal-stripe modal-stripe-download"></div>
+    <div class="modal-inner">
+      <div class="modal-header">
+        <div class="modal-icon">⬇️</div>
+        <div class="modal-title" id="dlRepNome">Relatório do Repositor</div>
+      </div>
+      <div id="dlRepBody">
+        <div style="color:var(--muted); font-size:13px; text-align:center; margin-bottom:8px">
+          Dados do repositor carregados do cache local
+        </div>
+        <div class="download-stat-grid" id="dlStatGrid"></div>
+        <div id="dlSemDados" style="display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; padding:12px; font-size:13px; text-align:center; color:#92400e; margin-bottom:12px">
+          ⚠️ Nenhum dado encontrado no cache local.<br>
+          <span style="font-size:12px">Importe um CSV primeiro para gerar o relatório.</span>
+        </div>
+      </div>
+      <div class="modal-footer" id="dlRepFooter">
+        <button class="btn btn-ghost" onclick="fecharModalDownload()" style="border:1px solid var(--border); border-radius:10px; padding:12px">Fechar</button>
+        <button class="btn btn-primary" id="dlRepConfirmarBtn" onclick="confirmarDownloadRepositor()" style="border-radius:10px; padding:12px; background:var(--green)">⬇ Baixar Excel</button>
+      </div>
     </div>
   </div>
 </div>
@@ -570,6 +683,15 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
         </div>
       </div>
 
+      <div id="arWarningsPanel" style="display:none; margin-bottom:16px">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title" style="color:var(--yellow)">⚠️ SKUs sem Repositor Vinculado</div>
+          </div>
+          <div class="panel-body" id="arWarningsList" style="padding:12px 20px"></div>
+        </div>
+      </div>
+
       <div class="content-grid">
         <div class="panel">
           <div class="panel-header">
@@ -637,11 +759,18 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
       <div class="panel" style="margin-bottom:16px">
         <div class="panel-header"><div class="panel-title">Vincular Repositor</div></div>
         <div class="panel-body">
+          <div id="arSupabaseHint" style="display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:12px; color:#92400e;">
+            ⚠️ <strong>Ação necessária:</strong> Adicione a coluna <code style="background:#fde68a;padding:1px 4px;border-radius:3px">ar</code> (tipo <code style="background:#fde68a;padding:1px 4px;border-radius:3px">text</code>) na tabela <strong>setores</strong> do Supabase para salvar o Armazenamento.
+          </div>
           <div class="form-grid" id="vinculoForm">
+            <div class="form-group" style="grid-column: 1 / -1">
+              <label>Armazenamento (AR:)</label>
+              <input type="text" id="cadAR" class="form-input" placeholder="Ex: Conveniência ou Armazenamento 01">
+            </div>
             <div class="form-group"><label>Rua</label><input type="number" id="cadRua" class="form-input"></div>
             <div class="form-group"><label>P. Início</label><input type="number" id="cadPIni" class="form-input"></div>
             <div class="form-group"><label>P. Fim</label><input type="number" id="cadPFim" class="form-input"></div>
-            <div class="form-group"><label>Nome</label><input type="text" id="cadNome" class="form-input"></div>
+            <div class="form-group"><label>Nome do Repositor</label><input type="text" id="cadNome" class="form-input"></div>
             <button class="btn btn-primary" id="btnSalvarVinculo" onclick="salvarVinculo()">Vincular</button>
           </div>
         </div>
@@ -650,7 +779,7 @@ label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 
         <div class="panel-header"><div class="panel-title">Equipe Cadastrada (Supabase)</div></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Setor</th><th>Repositor</th><th style="text-align:right">Ações</th></tr></thead>
+            <thead><tr><th>Armazenamento</th><th>Setor</th><th>Repositor</th><th style="text-align:right">Ações</th></tr></thead>
             <tbody id="tabelaVinculos"></tbody>
           </table>
         </div>
@@ -669,6 +798,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSe
 Chart.register(ChartDataLabels);
 
 let setores = [], dadosBrutos = [], dadosAgrupados = [], dadosBancoConsolidados = []; 
+let csvHeadersOriginais = []; // cabeçalhos originais do CSV para o download bruto
 let sortState = { col: 'unidades', asc: false };
 let showLabels = false, chartBarra = null, chartPizza = null;
 let modalResolver = null;
@@ -694,6 +824,13 @@ function openModal(icon, title, body, btnText, btnClass) {
   const confirmBtn = document.getElementById('modalConfirmBtn');
   confirmBtn.textContent = btnText;
   confirmBtn.className = `btn ${btnClass}`;
+  confirmBtn.style.borderRadius = '10px';
+  confirmBtn.style.padding = '12px';
+  // Stripe color
+  const stripe = document.getElementById('modalStripe');
+  stripe.className = 'modal-stripe';
+  if (btnClass.includes('danger')) stripe.classList.add('modal-stripe-danger');
+  else if (btnClass.includes('primary')) stripe.classList.add('modal-stripe');
   document.getElementById('modal-confirm').classList.add('active');
   return new Promise(resolve => { modalResolver = resolve; });
 }
@@ -756,6 +893,8 @@ async function init() {
   try {
     await carregarSetores();
     const local = localStorage.getItem('recusas_cache');
+    const localHeaders = localStorage.getItem('recusas_headers');
+    if (localHeaders) csvHeadersOriginais = JSON.parse(localHeaders);
     if (local) { dadosBrutos = JSON.parse(local); processarTudo(false); }
     else await carregarRankingGeral();
     setStatus(true);
@@ -796,30 +935,108 @@ async function sincronizarComBanco() {
 
 function processarTudo(auto=false) {
   const f = (document.getElementById('filtroInput')?.value || '').toLowerCase().trim();
+
   if (dadosBrutos.length > 0) {
-    const mapa = {}; let sk=0, un=0;
-    dadosBrutos.forEach(d => {
-      let n=null, l='';
-      if (!d.rua) l='Sem Endereço';
-      else {
-        const v = setores.find(s => s.rua === d.rua && (d.predio ?? 0) >= s.p_ini && (d.predio ?? 0) <= s.p_fim);
-        if (v) { n=v.nome; l=`Rua ${d.rua} · P:${v.p_ini}-${v.p_fim}`; }
-        else l=`Rua ${d.rua} · P:${d.predio}`;
+    // ── 1. PRÉ-INICIALIZAR todos os setores cadastrados com 0 SKUs ──────────
+    const mapa = {};
+    setores.forEach(s => {
+      const ar = (s.ar || '').trim();
+      const l = ar
+        ? `${ar} · Rua ${s.rua} · P:${s.p_ini}-${s.p_fim}`
+        : `Rua ${s.rua} · P:${s.p_ini}-${s.p_fim}`;
+      if (!mapa[l]) {
+        mapa[l] = { setor: l, repositor: s.nome, skusSet: new Set(), unidades: 0, ruaNum: s.rua, ar };
       }
-      const rep = n || '⚠ Pendente';
-      if (f && !l.toLowerCase().includes(f) && !rep.toLowerCase().includes(f)) return;
-      if (!mapa[l]) mapa[l] = { setor: l, repositor: rep, skus: 0, unidades: 0, ruaNum: d.rua || 0 };
-      mapa[l].skus++; mapa[l].unidades += d.quantidade; sk++; un += d.quantidade;
     });
-    dadosAgrupados = Object.values(mapa);
-    animateValue('kpiSkus', sk); animateValue('kpiUnidades', un, true);
-    animateValue('kpiRuas', new Set(dadosBrutos.filter(d=>d.rua).map(d=>d.rua)).size);
+
+    // ── 2. PROCESSAR CADA LINHA DO CSV ──────────────────────────────────────
+    // unmatchedByAr: ar -> Set de barcodes sem repositor vinculado
+    const unmatchedByAr = {};
+
+    dadosBrutos.forEach((d, idx) => {
+      const dAr    = (d.ar    || '').trim();
+      const dArLow = dAr.toLowerCase();
+      const dRua   = d.rua   || 0;
+      const dPred  = d.predio ?? 0;
+      const barras = d.barras || `_nobarras_${idx}`;
+
+      if (!dRua && !dAr) return; // sem endereço algum → ignora
+
+      // ── REGRA DE MATCHING (compatível com e sem coluna AR) ──
+      // Se o setor tem AR preenchido → exige AR + Rua + Prédio
+      // Se o setor NÃO tem AR → match por Rua + Prédio apenas (legado)
+      const v = setores.find(s => {
+        const sAr    = (s.ar || '').trim();
+        const sArLow = sAr.toLowerCase();
+        const ruaOk  = s.rua === dRua && dPred >= s.p_ini && dPred <= s.p_fim;
+        if (!ruaOk) return false;
+        if (sAr) {
+          // setor tem AR: exige correspondência de AR também
+          return sArLow === dArLow;
+        }
+        // setor sem AR: match só por Rua+Prédio (legado)
+        return true;
+      });
+
+      if (v) {
+        const ar = (v.ar || '').trim();
+        const l = ar
+          ? `${ar} · Rua ${v.rua} · P:${v.p_ini}-${v.p_fim}`
+          : `Rua ${v.rua} · P:${v.p_ini}-${v.p_fim}`;
+        if (mapa[l]) {
+          mapa[l].skusSet.add(barras);
+          mapa[l].unidades += d.quantidade;
+        }
+      } else if (dAr) {
+        // Tem AR no CSV mas nenhum repositor cobriu este setor
+        if (!unmatchedByAr[dAr]) unmatchedByAr[dAr] = new Set();
+        unmatchedByAr[dAr].add(barras);
+      }
+    });
+
+    // ── 3. CONVERTER skusSet → contagem final ────────────────────────────────
+    let allItems = Object.values(mapa).map(d => ({
+      setor: d.setor,
+      repositor: d.repositor,
+      skus: d.skusSet.size,
+      unidades: d.unidades,
+      ruaNum: d.ruaNum,
+      ar: d.ar
+    }));
+
+    // Aplicar filtro de busca
+    if (f) {
+      allItems = allItems.filter(d =>
+        d.setor.toLowerCase().includes(f) || d.repositor.toLowerCase().includes(f)
+      );
+    }
+
+    dadosAgrupados = allItems;
+
+    // ── 4. KPIs GLOBAIS ──────────────────────────────────────────────────────
+    const allBarcodes = new Set();
+    let totalUn = 0;
+    const allRuas = new Set();
+    dadosBrutos.forEach((d, idx) => {
+      allBarcodes.add(d.barras || `_nobarras_${idx}`);
+      totalUn += d.quantidade;
+      if (d.rua) allRuas.add(d.rua);
+    });
+    animateValue('kpiSkus', allBarcodes.size);
+    animateValue('kpiUnidades', totalUn, true);
+    animateValue('kpiRuas', allRuas.size);
+
+    // ── 5. AVISOS: ARs sem repositor ─────────────────────────────────────────
+    renderUnmatchedWarnings(unmatchedByAr);
+
   } else {
     dadosAgrupados = dadosBancoConsolidados.filter(d => !f || d.setor.toLowerCase().includes(f) || d.repositor.toLowerCase().includes(f));
     let sk=0, un=0; const rs=new Set();
     dadosAgrupados.forEach(d=>{ sk+=d.skus; un+=d.unidades; if(d.ruaNum) rs.add(d.ruaNum); });
     animateValue('kpiSkus', sk); animateValue('kpiUnidades', un, true); animateValue('kpiRuas', rs.size);
+    renderUnmatchedWarnings({});
   }
+
   animateValue('kpiEquipe', new Set(setores.map(s=>s.nome)).size);
   renderizarRankings(); ordenarERenderizar();
 }
@@ -837,15 +1054,28 @@ function animateValue(id, target, format=false) {
 }
 
 function renderizarRankings() {
-  const rRep={}, rRua={};
+  const rRep = {}, rRua = {};
+
+  // Pré-inicializar todos os repositores e ruas cadastradas com 0
+  setores.forEach(s => {
+    if (s.nome) rRep[s.nome] = rRep[s.nome] ?? 0;
+    if (s.rua)  rRua[`Rua ${s.rua}`] = rRua[`Rua ${s.rua}`] ?? 0;
+  });
+
+  // Acumular valores de dadosAgrupados
   dadosAgrupados.forEach(d => {
     const valColab = metricColab === 'skus' ? d.skus : d.unidades;
-    const valRuas = metricRuas === 'skus' ? d.skus : d.unidades;
-    if(d.repositor !== '⚠ Pendente') rRep[d.repositor] = (rRep[d.repositor] || 0) + valColab;
-    if(d.ruaNum) rRua[`Rua ${d.ruaNum}`] = (rRua[`Rua ${d.ruaNum}`] || 0) + valRuas;
+    const valRuas  = metricRuas  === 'skus' ? d.skus : d.unidades;
+    if (d.repositor && d.repositor !== '⚠ Pendente') {
+      rRep[d.repositor] = (rRep[d.repositor] || 0) + valColab;
+    }
+    if (d.ruaNum) {
+      rRua[`Rua ${d.ruaNum}`] = (rRua[`Rua ${d.ruaNum}`] || 0) + valRuas;
+    }
   });
+
   renderRankList('rankColaboradores', Object.entries(rRep).sort((a,b)=>a[1]-b[1]), 'var(--accent)');
-  renderRankList('rankRuas', Object.entries(rRua).sort((a,b)=>b[1]-a[1]), 'var(--blue)');
+  renderRankList('rankRuas',          Object.entries(rRua).sort((a,b)=>b[1]-a[1]), 'var(--blue)');
 }
 
 function renderRankList(id, items, color) {
@@ -861,6 +1091,26 @@ function renderRankList(id, items, color) {
       <div class="rank-val">${q.toLocaleString()}</div>
     </div>`).join('');
 }
+
+function renderUnmatchedWarnings(unmatchedByAr) {
+  const panel = document.getElementById('arWarningsPanel');
+  const list  = document.getElementById('arWarningsList');
+  const entries = Object.entries(unmatchedByAr).filter(([, s]) => s.size > 0);
+  if (!entries.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  list.innerHTML = entries.map(([ar, skuSet]) => `
+    <div style="display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid var(--border)">
+      <span style="font-size:20px">⚠️</span>
+      <div style="flex:1">
+        <div style="font-weight:700; font-size:13px">AR: ${ar}</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:2px">
+          Nenhum repositor vinculado a ${skuSet.size} SKU(s) único(s) neste armazenamento
+        </div>
+      </div>
+      <div style="font-family:'JetBrains Mono'; font-weight:800; font-size:18px; color:var(--yellow)">${skuSet.size}</div>
+    </div>`).join('');
+}
+
 
 function sortTable(col) {
   if(sortState.col === col) sortState.asc = !sortState.asc; else { sortState.col = col; sortState.asc = false; }
@@ -913,20 +1163,34 @@ document.getElementById('btnToggleCharts').onclick = function() {
 };
 
 async function salvarVinculo() {
+  const ar = document.getElementById('cadAR').value.trim();
   const rua = parseInt(document.getElementById('cadRua').value), pIni = parseInt(document.getElementById('cadPIni').value)||0, pFim = parseInt(document.getElementById('cadPFim').value)||999, nome = document.getElementById('cadNome').value.trim();
   if(!rua || !nome) return;
   
   if (editingId) {
-    const { error } = await sb.from('setores').update({ rua, p_ini: pIni, p_fim: pFim, nome }).eq('id', editingId);
+    const { error } = await sb.from('setores').update({ rua, p_ini: pIni, p_fim: pFim, nome, ar }).eq('id', editingId);
     if (!error) { toast('Atualizado!', 'success'); cancelarEdicao(); }
-    else { toast('Erro ao atualizar', 'error'); }
+    else { 
+      if (error.message && error.message.includes('ar')) {
+        document.getElementById('arSupabaseHint').style.display = 'block';
+        toast('Adicione a coluna "ar" no Supabase', 'error');
+      } else { toast('Erro ao atualizar', 'error'); }
+    }
   } else {
-    await sb.from('setores').insert([{ rua, p_ini: pIni, p_fim: pFim, nome }]);
-    toast('Salvo!', 'success');
-    document.getElementById('cadRua').value = '';
-    document.getElementById('cadPIni').value = '';
-    document.getElementById('cadPFim').value = '';
-    document.getElementById('cadNome').value = '';
+    const { error } = await sb.from('setores').insert([{ rua, p_ini: pIni, p_fim: pFim, nome, ar }]);
+    if (!error) {
+      toast('Salvo!', 'success');
+      document.getElementById('cadAR').value = '';
+      document.getElementById('cadRua').value = '';
+      document.getElementById('cadPIni').value = '';
+      document.getElementById('cadPFim').value = '';
+      document.getElementById('cadNome').value = '';
+    } else {
+      if (error.message && error.message.includes('ar')) {
+        document.getElementById('arSupabaseHint').style.display = 'block';
+        toast('Adicione a coluna "ar" (text) na tabela setores do Supabase', 'error');
+      } else { toast('Erro ao salvar', 'error'); }
+    }
   }
 }
 
@@ -934,32 +1198,192 @@ function prepararEdicao(id) {
   const s = setores.find(x => x.id === id);
   if (!s) return;
   editingId = id;
+  document.getElementById('cadAR').value = s.ar || '';
   document.getElementById('cadRua').value = s.rua;
   document.getElementById('cadPIni').value = s.p_ini;
   document.getElementById('cadPFim').value = s.p_fim;
   document.getElementById('cadNome').value = s.nome;
-  const btn = document.getElementById('btnSalvarVinculo');
-  btn.textContent = 'Salvar Alterações';
-  if (!document.getElementById('btnCancelarEdicao')) {
-    const cancelBtn = document.createElement('button');
+  document.getElementById('btnSalvarVinculo').textContent = '✔ Salvar Alterações';
+  document.getElementById('btnSalvarVinculo').style.background = 'var(--green)';
+  // Show the styled cancel button
+  let cancelBtn = document.getElementById('btnCancelarEdicao');
+  if (!cancelBtn) {
+    cancelBtn = document.createElement('button');
     cancelBtn.id = 'btnCancelarEdicao';
-    cancelBtn.className = 'btn btn-ghost';
-    cancelBtn.textContent = 'Cancelar';
-    cancelBtn.onclick = cancelarEdicao;
-    btn.parentNode.appendChild(cancelBtn);
+    cancelBtn.className = 'btn';
+    cancelBtn.style.cssText = 'background:var(--surf2); color:var(--text); border:1px solid var(--border2); font-size:11px;';
+    cancelBtn.onclick = abrirModalCancelar;
+    document.getElementById('btnSalvarVinculo').parentNode.appendChild(cancelBtn);
   }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  cancelBtn.textContent = '✕ Cancelar';
+  document.getElementById('cancelEditNome').textContent = s.nome;
+  switchPage('equipe');
+  setTimeout(() => document.getElementById('vinculoForm').scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+}
+
+function abrirModalCancelar() {
+  document.getElementById('modal-cancel-edit').classList.add('active');
+}
+
+function fecharModalCancelar() {
+  document.getElementById('modal-cancel-edit').classList.remove('active');
+}
+
+function confirmarCancelarEdicao() {
+  fecharModalCancelar();
+  cancelarEdicao();
 }
 
 function cancelarEdicao() {
   editingId = null;
+  document.getElementById('cadAR').value = '';
   document.getElementById('cadRua').value = '';
   document.getElementById('cadPIni').value = '';
   document.getElementById('cadPFim').value = '';
   document.getElementById('cadNome').value = '';
-  document.getElementById('btnSalvarVinculo').textContent = 'Vincular';
+  const btn = document.getElementById('btnSalvarVinculo');
+  btn.textContent = 'Vincular';
+  btn.style.background = '';
   const c = document.getElementById('btnCancelarEdicao');
   if (c) c.remove();
+}
+
+// ── DOWNLOAD POR REPOSITOR ───────────────────────────────────────────────────
+let downloadTargetId = null;
+
+function abrirModalDownload(id) {
+  downloadTargetId = id;
+  const s = setores.find(x => x.id === id);
+  if (!s) return;
+
+  document.getElementById('dlRepNome').textContent = s.nome.toUpperCase();
+  const statGrid = document.getElementById('dlStatGrid');
+  const semDados = document.getElementById('dlSemDados');
+  const dlBtn = document.getElementById('dlRepConfirmarBtn');
+
+  if (!dadosBrutos.length) {
+    statGrid.style.display = 'none';
+    semDados.style.display = 'block';
+    dlBtn.disabled = true;
+    dlBtn.style.opacity = '0.4';
+  } else {
+    semDados.style.display = 'none';
+    statGrid.style.display = 'grid';
+    dlBtn.disabled = false;
+    dlBtn.style.opacity = '1';
+
+    // Calcular stats do repositor
+    const stats = calcularStatsRepositor(s);
+    statGrid.innerHTML = `
+      <div class="download-stat">
+        <div class="download-stat-val" style="color:var(--accent)">${stats.skus}</div>
+        <div class="download-stat-label">SKUs únicos</div>
+      </div>
+      <div class="download-stat">
+        <div class="download-stat-val" style="color:var(--green)">${stats.unidades.toLocaleString()}</div>
+        <div class="download-stat-label">Unidades</div>
+      </div>
+      <div class="download-stat">
+        <div class="download-stat-val" style="color:var(--blue)">${stats.ruas.size}</div>
+        <div class="download-stat-label">Ruas</div>
+      </div>
+      <div class="download-stat">
+        <div class="download-stat-val" style="color:var(--yellow)">${stats.predios.size}</div>
+        <div class="download-stat-label">Prédios</div>
+      </div>`;
+  }
+
+  document.getElementById('modal-download-rep').classList.add('active');
+}
+
+function fecharModalDownload() {
+  document.getElementById('modal-download-rep').classList.remove('active');
+  downloadTargetId = null;
+}
+
+function calcularStatsRepositor(setor) {
+  // Encontra todos os setores vinculados a este repositor (mesmo nome)
+  const setoresRep = setores.filter(s => s.nome === setor.nome);
+  const skusSet = new Set();
+  const ruas = new Set();
+  const predios = new Set();
+  let unidades = 0;
+
+  dadosBrutos.forEach((d, idx) => {
+    const dAr    = (d.ar    || '').trim();
+    const dArLow = dAr.toLowerCase();
+    const dRua   = d.rua   || 0;
+    const dPred  = d.predio ?? 0;
+    const barras = d.barras || `_nobarras_${idx}`;
+
+    const match = setoresRep.find(s => {
+      const sAr    = (s.ar || '').trim();
+      const ruaOk  = s.rua === dRua && dPred >= s.p_ini && dPred <= s.p_fim;
+      if (!ruaOk) return false;
+      if (sAr) return sAr.toLowerCase() === dArLow;
+      return true;
+    });
+
+    if (match) {
+      skusSet.add(barras);
+      unidades += d.quantidade;
+      if (dRua) ruas.add(dRua);
+      if (dPred) predios.add(dPred);
+    }
+  });
+
+  return { skus: skusSet.size, unidades, ruas, predios };
+}
+
+function confirmarDownloadRepositor() {
+  const s = setores.find(x => x.id === downloadTargetId);
+  if (!s || !dadosBrutos.length) return;
+
+  const setoresRep = setores.filter(x => x.nome === s.nome);
+  const skusVistos = new Set();
+  const linhasArr  = [];  // cada item = array de valores na ordem do CSV
+
+  dadosBrutos.forEach(d => {
+    const dAr    = (d.ar    || '').trim();
+    const dArLow = dAr.toLowerCase();
+    const dRua   = d.rua    || 0;
+    const dPred  = d.predio ?? 0;
+    const barras = d.barras || '';
+
+    const match = setoresRep.find(x => {
+      const sAr   = (x.ar || '').trim();
+      const ruaOk = x.rua === dRua && dPred >= x.p_ini && dPred <= x.p_fim;
+      if (!ruaOk) return false;
+      if (sAr) return sAr.toLowerCase() === dArLow;
+      return true;
+    });
+
+    if (!match) return;
+    if (barras && skusVistos.has(barras)) return;
+    if (barras) skusVistos.add(barras);
+
+    linhasArr.push(d._rowArr || []);
+  });
+
+  if (!linhasArr.length) { toast('Nenhum dado encontrado para este repositor', 'error'); return; }
+
+  const headers = csvHeadersOriginais;
+
+  // aoa_to_sheet: array de arrays → planilha idêntica ao CSV, só filtrada
+  const aoa = [headers, ...linhasArr];
+  const ws  = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Largura automática por coluna
+  ws['!cols'] = headers.map((h, ci) => {
+    const maxLen = aoa.reduce((m, row) => Math.max(m, String(row[ci] ?? '').length), 0);
+    return { wch: Math.min(Math.max(maxLen + 2, 10), 60) };
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, s.nome.substring(0, 31));
+  XLSX.writeFile(wb, `Recusas_${s.nome.replace(/\s+/g,'_')}.xlsx`);
+  toast(`Excel de ${s.nome} baixado!`, 'success');
+  fecharModalDownload();
 }
 
 async function removerVinculo(id) {
@@ -970,12 +1394,18 @@ async function removerVinculo(id) {
 function renderizarVinculos() {
   document.getElementById('tabelaVinculos').innerHTML = setores.map(s => `
     <tr>
-      <td style="font-family:'JetBrains Mono'">Rua ${s.rua} [${s.p_ini}-${s.p_fim}]</td>
-      <td>${s.nome}</td>
+      <td>
+        ${s.ar
+          ? `<span style="font-family:'JetBrains Mono'; font-size:11px; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px; font-weight:700">${s.ar}</span>`
+          : `<span style="color:var(--muted2); font-size:12px">—</span>`}
+      </td>
+      <td style="font-family:'JetBrains Mono'; font-size:12px">Rua ${s.rua} [${s.p_ini}–${s.p_fim}]</td>
+      <td style="font-weight:600">${s.nome}</td>
       <td style="text-align:right">
-        <div style="display:flex; gap:12px; justify-content:flex-end">
-          <button onclick="prepararEdicao('${s.id}')" style="color:var(--blue); border:none; background:none; cursor:pointer; font-size:10px; font-weight:700">EDITAR</button>
-          <button onclick="removerVinculo('${s.id}')" style="color:var(--red); border:none; background:none; cursor:pointer; font-size:10px; font-weight:700">REMOVER</button>
+        <div style="display:flex; gap:6px; justify-content:flex-end; align-items:center">
+          <button onclick="abrirModalDownload('${s.id}')" class="tbl-action-btn" title="Baixar relatório" style="color:var(--green)">⬇ BAIXAR</button>
+          <button onclick="prepararEdicao('${s.id}')" class="tbl-action-btn" style="color:var(--blue)">✏ EDITAR</button>
+          <button onclick="removerVinculo('${s.id}')" class="tbl-action-btn" style="color:var(--red)">✕ REMOVER</button>
         </div>
       </td>
     </tr>`).join('');
@@ -999,27 +1429,46 @@ document.getElementById('csvInput').onchange = (e) => {
     const lines = ev.target.result.split(/\r?\n/).filter(l => l.trim() !== '');
     if (lines.length < 2) return;
     const sep = lines[0].includes(';') ? ';' : ',';
-    const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
-    
-    const idxQtd = headers.findIndex(h => h.includes('qtd') || h.includes('quant') || h.includes('unidade'));
-    const idxEnd = headers.findIndex(h => h.includes('ender') || h.includes('local') || h.includes('rua'));
+
+    // Headers originais (sem alteração de case, apenas sem aspas)
+    const headersOriginais = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, ''));
+    // Headers normalizados só para detecção de índices
+    const headers = headersOriginais.map(h => h.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+
+    const idxQtd    = headers.findIndex(h => h === 'quantidade' || h.includes('qtd') || h.includes('quant'));
+    const idxEnd    = headers.findIndex(h => h === 'endereco'   || h.includes('ender') || h.includes('local'));
+    const idxBarras = headers.findIndex(h => h === 'barras'     || h.includes('barcode') || h.includes('barras'));
 
     if (idxQtd === -1 || idxEnd === -1) {
-      toast('Colunas não identificadas no CSV', 'error');
+      toast('Colunas obrigatórias não encontradas (Quantidade / Endereço)', 'error');
       return;
     }
 
+    // Salvar headers originais globalmente para o download
+    csvHeadersOriginais = headersOriginais;
+
     const novos = lines.slice(1).map(l => {
-      const c = l.split(sep).map(v => v.trim().replace(/^"|"$/g, ''));
-      const endVal = c[idxEnd] || '';
-      const rM = endVal.match(/R[:\s.]*(\d+)/i);
-      const pM = endVal.match(/P[:\s.]*(\d+)/i);
-      const qtdStr = (c[idxQtd] || '0').replace(/\D/g, '');
-      const qtd = parseInt(qtdStr) || 0;
-      return { 
-        quantidade: qtd, 
-        rua: rM ? parseInt(rM[1]) : 0, 
-        predio: pM ? parseInt(pM[1]) : 0 
+      const c      = l.split(sep).map(v => v.trim().replace(/^"|"$/g, ''));
+      const endVal = (c[idxEnd] || '').trim();
+
+      const arM = endVal.match(/AR:\s*(.+?)(?=\s+R:\s*\d|$)/i);
+      const rM  = endVal.match(/\bR:\s*(\d+)/i);
+      const pM  = endVal.match(/\bP:\s*(\d+)/i);
+
+      const qtd    = parseInt((c[idxQtd] || '0').replace(/[^\d]/g, '')) || 0;
+      const barras = idxBarras !== -1 ? (c[idxBarras] || '') : '';
+
+      // _rowArr: valores na mesma posição/ordem exata do CSV original
+      const _rowArr = headersOriginais.map((_, i) => c[i] ?? '');
+
+      return {
+        quantidade: qtd,
+        rua:     rM  ? parseInt(rM[1]) : 0,
+        predio:  pM  ? parseInt(pM[1]) : 0,
+        ar:      arM ? arM[1].trim()   : '',
+        barras,
+        _rowArr
       };
     }).filter(d => d.quantidade > 0);
 
@@ -1029,11 +1478,12 @@ document.getElementById('csvInput').onchange = (e) => {
     }
 
     localStorage.setItem('recusas_cache', JSON.stringify(novos));
-    dadosBrutos = novos; 
-    processarTudo(); 
+    localStorage.setItem('recusas_headers', JSON.stringify(headersOriginais));
+    dadosBrutos = novos;
+    processarTudo();
     toast(`${novos.length} registros carregados!`, 'success');
   };
-  r.readAsText(f);
+  r.readAsText(f, 'UTF-8');
 };
 
 document.getElementById('filtroInput').oninput = () => processarTudo();
